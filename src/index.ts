@@ -111,4 +111,17 @@ app.post("/login", async (c) => {
   }
 });
 
+app.post("/auction", async (c) => {
+  const body = await c.req.json();
+  const auctionRoom = await prisma.auctionRoom.create({
+    data:{
+      id: body.id,
+      name: body.name,
+      description: body.description,
+      product: body.product,
+    },
+  });
+});
+
+
 export default app;

@@ -43,5 +43,7 @@ model AuctionRoom {
   id       String    @id @default(uuid())
   name     String
   Users    User[]
-  Products Product[]
+  product Product[]
+  description String
+  createdAt DateTime @default(now())
 }
