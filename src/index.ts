@@ -3,12 +3,12 @@ import { cors } from "hono/cors";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { HTTPException } from "hono/http-exception";
 import { decode, sign, verify } from "hono/jwt";
-import { jwt } from 'hono/jwt'
-import type { JwtVariables } from 'hono/jwt'
+import { jwt } from "hono/jwt";
+import type { JwtVariables } from "hono/jwt";
 
-type Variables = JwtVariables
+type Variables = JwtVariables;
 
-const app = new Hono<{ Variables: Variables }>()
+const app = new Hono<{ Variables: Variables }>();
 
 const prisma = new PrismaClient();
 
@@ -17,7 +17,7 @@ app.use("/*", cors());
 app.use(
   "/protected/*",
   jwt({
-    secret: 'mySecretKey',
+    secret: "mySecretKey",
   })
 );
 
@@ -58,9 +58,9 @@ app.post("/register", async (c) => {
     const user = await prisma.user.create({
       data: {
         email: body.email,
-        hashedPassword: bcryptHash, 
+        hashedPassword: bcryptHash,
         name: body.name,
-        phoneNumber: body.phoneNumber
+        phoneNumber: body.phoneNumber,
       },
     });
 
@@ -111,17 +111,108 @@ app.post("/login", async (c) => {
   }
 });
 
+app.post("/protected/product", async (c) => {
+  const payload = c.get("jwtPayload");
+  if (!payload) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+  const body = await c.req.json();
+  const product = await prisma.product.create({
+    data: {
+      name: body.name,
+      description: body.description,
+      startPrice: body.startPrice,
+      minSellingPrice: body.minSellingPrice,
+      minIncrementBid: body.minIncrementBid,
+      image: body.image,
+      sellerId: body.sellerId || payload.sub,
+      seller: { connect: { id: body.sellerId } }
+    }
+  });
+  return c.json({ data: product });
+});
+
+app.get("/product/:id", async (c) => {
+  const { id } = c.req.param();
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: { seller: true },
+  });
+  return c.json({ data: product });
+});
+
+app.get("/protected/products", async (c) => {
+  const payload = c.get("jwtPayload");
+  if (!payload) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+  const products = await prisma.product.findMany({
+    where: { sellerId: payload.sub },
+    include: { seller: true },
+  });
+  return c.json({ data: products});
+}); 
+
+app.put("/product/:id", async (c) => {
+  const { id } = c.req.param();
+  const body = await c.req.json();
+  const product = await prisma.product.update({
+    where: { id },
+    data: {
+      name: body.name,
+      description: body.description,
+      startPrice: body.startPrice,
+      minSellingPrice: body.minSellingPrice,
+      image: body.image,
+      sellerId: body.sellerId,
+    },
+  });
+app.delete("/product/:id", async (c) => {
+  const { id } = c.req.param();
+  const product = await prisma.product.delete({
+    where: { id },
+  });
+  return c.json({ data: product });
+});
+
+
+
 app.post("/auction", async (c) => {
   const body = await c.req.json();
   const auctionRoom = await prisma.auctionRoom.create({
-    data:{
+    data: {
       id: body.id,
       name: body.name,
       description: body.description,
-      product: body.product,
+      products: {
+        create: [
+          {
+            id: body.products.id,
+            name: body.products.name,
+            description: body.products.description,
+            startPrice: 0,
+            minSellingPrice: 0,
+            minIncrementBid: 0,
+            startDate: new Date(),
+            endDate: new Date(),
+            extendTime: 0,
+            image: "",
+            sellerId: body.products.sellerId
+          },
+        ],
+      },
     },
   });
 });
 
+app.get("/auction/:id", async (c) => {
+  const { id } = c.req.param();
+  const auctionRoom = await prisma.auctionRoom.findUnique({
+    where: { id },
+    include: { products: true },
+  });
+  return c.json({ data: auctionRoom });
+});
+});
 
 export default app;

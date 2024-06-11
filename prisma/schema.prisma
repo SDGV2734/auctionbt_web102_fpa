@@ -29,9 +29,9 @@ model Product {
   startPrice      Float
   minSellingPrice Float
   minIncrementBid Float
-  startDate       DateTime
-  endDate         DateTime
-  extendTime      Float
+  startDate       DateTime?
+  endDate         DateTime?
+  extendTime      Float?
   image           String
   seller          User         @relation(fields: [sellerId], references: [id])
   sellerId        String
@@ -43,7 +43,7 @@ model AuctionRoom {
   id       String    @id @default(uuid())
   name     String
   Users    User[]
-  product Product[]
+  products Product[]
   description String
   createdAt DateTime @default(now())
 }
