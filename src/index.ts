@@ -21,30 +21,30 @@ app.use(
   })
 );
 
-app.get("/protected/account/balance", async (c) => {
-  const payload = c.get('jwtPayload')
-  if (!payload) {
-    throw new HTTPException(401, { message: "Unauthorized" });
-  }
-  const user = await prisma.user.findUnique({
-    where: { id: payload.sub },
-    select: { Account: { select: { balance: true, id: true } } },
-  });
+// app.get("/protected/account/balance", async (c) => {
+//   const payload = c.get('jwtPayload')
+//   if (!payload) {
+//     throw new HTTPException(401, { message: "Unauthorized" });
+//   }
+//   const user = await prisma.user.findUnique({
+//     where: { id: payload.sub },
+//     select: { Account: { select: { balance: true, id: true } } },
+//   });
 
-  return c.json({ data: user });
-});
+//   return c.json({ data: user });
+// });
 
-app.get("/:userId/account/balance", async (c) => {
-  // get user account balance from url params
-  const { userId } = c.req.param();
+// app.get("/:userId/account/balance", async (c) => {
+//   // get user account balance from url params
+//   const { userId } = c.req.param();
 
-  // create a new user
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { Account: { select: { balance: true, id: true } } },
-  });
-  return c.json({ data: user });
-});
+//   // create a new user
+//   const user = await prisma.user.findUnique({
+//     where: { id: userId },
+//     select: { Account: { select: { balance: true, id: true } } },
+//   });
+//   return c.json({ data: user });
+// });
 
 app.post("/register", async (c) => {
   try {
@@ -58,12 +58,9 @@ app.post("/register", async (c) => {
     const user = await prisma.user.create({
       data: {
         email: body.email,
-        hashedPassword: bcryptHash,
-        Account: {
-          create: {
-            balance: 0,
-          },
-        },
+        hashedPassword: bcryptHash, 
+        name: body.name,
+        phoneNumber: body.phoneNumber
       },
     });
 

@@ -16,7 +16,7 @@ model User {
   hashedPassword String
   name           String
   phoneNumber    String
-  profileImage   String
+  profileImage   String?
   Product        Product[]
   AuctionRoom    AuctionRoom? @relation(fields: [auctionRoomId], references: [id])
   auctionRoomId  String?
