@@ -98,7 +98,7 @@ app.post("/login", async (c) => {
     if (match) {
       const payload = {
         sub: user.id,
-        exp: Math.floor(Date.now() / 1000) + 60 * 60, // Token expires in 60 minutes
+        exp: Math.floor(Date.now() / 1000) + 60 * 720, // Token expires in 720 minutes
       };
       const secret = "mySecretKey";
       const token = await sign(payload, secret);
@@ -112,24 +112,28 @@ app.post("/login", async (c) => {
 });
 
 app.post("/protected/product", async (c) => {
-  const payload = c.get("jwtPayload");
-  if (!payload) {
-    throw new HTTPException(401, { message: "Unauthorized" });
-  }
-  const body = await c.req.json();
-  const product = await prisma.product.create({
-    data: {
-      name: body.name,
-      description: body.description,
-      startPrice: body.startPrice,
-      minSellingPrice: body.minSellingPrice,
-      minIncrementBid: body.minIncrementBid,
-      image: body.image,
-      sellerId: body.sellerId || payload.sub,
-      seller: { connect: { id: body.sellerId } }
+  try {
+    const payload = c.get("jwtPayload");
+    if (!payload) {
+      throw new HTTPException(401, { message: "Unauthorized" });
     }
-  });
-  return c.json({ data: product });
+    const body = await c.req.json();
+    const product = await prisma.product.create({
+      data: {
+        name: body.name,
+        description: body.description,
+        startPrice: body.startPrice,
+        minSellingPrice: body.minSellingPrice,
+        minIncrementBid: body.minIncrementBid,
+        image: body.image,
+        seller: { connect: { id: payload.sub } },
+      },
+    });
+    console.log(product);
+    return c.json({ data: product });
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 app.get("/product/:id", async (c) => {
@@ -150,69 +154,94 @@ app.get("/protected/products", async (c) => {
     where: { sellerId: payload.sub },
     include: { seller: true },
   });
-  return c.json({ data: products});
-}); 
-
-app.put("/product/:id", async (c) => {
-  const { id } = c.req.param();
-  const body = await c.req.json();
-  const product = await prisma.product.update({
-    where: { id },
-    data: {
-      name: body.name,
-      description: body.description,
-      startPrice: body.startPrice,
-      minSellingPrice: body.minSellingPrice,
-      image: body.image,
-      sellerId: body.sellerId,
-    },
-  });
-app.delete("/product/:id", async (c) => {
-  const { id } = c.req.param();
-  const product = await prisma.product.delete({
-    where: { id },
-  });
-  return c.json({ data: product });
+  return c.json({ data: products });
 });
 
-
-
-app.post("/auction", async (c) => {
+app.put("/protected/product/:id", async (c) => {
+  const payload = c.get("jwtPayload");
+  console.log(payload);
+  if (!payload) {
+    console.log("Unauthorized")
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+  const { id } = c.req.param();
   const body = await c.req.json();
-  const auctionRoom = await prisma.auctionRoom.create({
-    data: {
-      id: body.id,
-      name: body.name,
-      description: body.description,
-      products: {
-        create: [
-          {
-            id: body.products.id,
-            name: body.products.name,
-            description: body.products.description,
-            startPrice: 0,
-            minSellingPrice: 0,
-            minIncrementBid: 0,
-            startDate: new Date(),
-            endDate: new Date(),
-            extendTime: 0,
-            image: "",
-            sellerId: body.products.sellerId
-          },
-        ],
+
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) {
+    throw new HTTPException(404, { message: "Product not found" });
+  }
+  if (payload.sub === product.sellerId) {
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: {
+        name: body.name,
+        description: body.description,
+        startPrice: body.startPrice,
+        minSellingPrice: body.minSellingPrice,
+        image: body.image,
       },
-    },
-  });
+    });
+    return c.json({ data: updatedProduct });
+  } else if (payload.sub !== product.sellerId) {
+    throw new HTTPException(403, { message: "Forbidden" });
+  }
 });
 
-app.get("/auction/:id", async (c) => {
-  const { id } = c.req.param();
-  const auctionRoom = await prisma.auctionRoom.findUnique({
-    where: { id },
-    include: { products: true },
+  app.delete("/protected/product/:id", async (c) => {
+    const payload = c.get("jwtPayload");
+    if (!payload) {
+      throw new HTTPException(401, { message: "Unauthorized" });
+    }
+    const { id } = c.req.param();
+    
+    const product = await prisma.product.findUnique({where: { id }});
+    if (!product) {
+      throw new HTTPException(404, { message: "Product not found" });
+    }
+    if (payload.sub === product.sellerId) {
+      const deletedProduct = await prisma.product.delete({ where: { id } });
+      return c.json({ data: deletedProduct });
+    } else if (payload.sub != product.sellerId){
+      throw new HTTPException(403, { message: "Forbidden" });
+    } 
   });
-  return c.json({ data: auctionRoom });
-});
-});
+
+  app.post("/auction", async (c) => {
+    const body = await c.req.json();
+    const auctionRoom = await prisma.auctionRoom.create({
+      data: {
+        id: body.id,
+        name: body.name,
+        description: body.description,
+        products: {
+          create: [
+            {
+              id: body.products.id,
+              name: body.products.name,
+              description: body.products.description,
+              startPrice: 0,
+              minSellingPrice: 0,
+              minIncrementBid: 0,
+              startDate: new Date(),
+              endDate: new Date(),
+              extendTime: 0,
+              image: "",
+              sellerId: body.products.sellerId,
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  app.get("/auction/:id", async (c) => {
+    const { id } = c.req.param();
+    const auctionRoom = await prisma.auctionRoom.findUnique({
+      where: { id },
+      include: { products: true },
+    });
+    return c.json({ data: auctionRoom });
+  });
 
 export default app;

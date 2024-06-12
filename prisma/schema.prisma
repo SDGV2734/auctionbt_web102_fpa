@@ -36,7 +36,7 @@ model Product {
   seller          User         @relation(fields: [sellerId], references: [id])
   sellerId        String
   room            AuctionRoom? @relation(fields: [roomId], references: [id])
-  roomId          String
+  roomId          String?
 }
 
 model AuctionRoom {
