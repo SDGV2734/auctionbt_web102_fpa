@@ -21,31 +21,6 @@ app.use(
   })
 );
 
-// app.get("/protected/account/balance", async (c) => {
-//   const payload = c.get('jwtPayload')
-//   if (!payload) {
-//     throw new HTTPException(401, { message: "Unauthorized" });
-//   }
-//   const user = await prisma.user.findUnique({
-//     where: { id: payload.sub },
-//     select: { Account: { select: { balance: true, id: true } } },
-//   });
-
-//   return c.json({ data: user });
-// });
-
-// app.get("/:userId/account/balance", async (c) => {
-//   // get user account balance from url params
-//   const { userId } = c.req.param();
-
-//   // create a new user
-//   const user = await prisma.user.findUnique({
-//     where: { id: userId },
-//     select: { Account: { select: { balance: true, id: true } } },
-//   });
-//   return c.json({ data: user });
-// });
-
 app.post("/register", async (c) => {
   try {
     const body = await c.req.json();
@@ -161,7 +136,7 @@ app.put("/protected/product/:id", async (c) => {
   const payload = c.get("jwtPayload");
   console.log(payload);
   if (!payload) {
-    console.log("Unauthorized")
+    console.log("Unauthorized");
     throw new HTTPException(401, { message: "Unauthorized" });
   }
   const { id } = c.req.param();
@@ -188,60 +163,48 @@ app.put("/protected/product/:id", async (c) => {
   }
 });
 
-  app.delete("/protected/product/:id", async (c) => {
-    const payload = c.get("jwtPayload");
-    if (!payload) {
-      throw new HTTPException(401, { message: "Unauthorized" });
-    }
-    const { id } = c.req.param();
-    
-    const product = await prisma.product.findUnique({where: { id }});
-    if (!product) {
-      throw new HTTPException(404, { message: "Product not found" });
-    }
-    if (payload.sub === product.sellerId) {
-      const deletedProduct = await prisma.product.delete({ where: { id } });
-      return c.json({ data: deletedProduct });
-    } else if (payload.sub != product.sellerId){
-      throw new HTTPException(403, { message: "Forbidden" });
-    } 
-  });
+app.delete("/protected/product/:id", async (c) => {
+  const payload = c.get("jwtPayload");
+  if (!payload) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+  const { id } = c.req.param();
 
-  app.post("/auction", async (c) => {
-    const body = await c.req.json();
-    const auctionRoom = await prisma.auctionRoom.create({
-      data: {
-        id: body.id,
-        name: body.name,
-        description: body.description,
-        products: {
-          create: [
-            {
-              id: body.products.id,
-              name: body.products.name,
-              description: body.products.description,
-              startPrice: 0,
-              minSellingPrice: 0,
-              minIncrementBid: 0,
-              startDate: new Date(),
-              endDate: new Date(),
-              extendTime: 0,
-              image: "",
-              sellerId: body.products.sellerId,
-            },
-          ],
-        },
-      },
-    });
-  });
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) {
+    throw new HTTPException(404, { message: "Product not found" });
+  }
+  if (payload.sub === product.sellerId) {
+    const deletedProduct = await prisma.product.delete({ where: { id } });
+    return c.json({ data: deletedProduct });
+  } else if (payload.sub != product.sellerId) {
+    throw new HTTPException(403, { message: "Forbidden" });
+  }
+});
 
-  app.get("/auction/:id", async (c) => {
-    const { id } = c.req.param();
-    const auctionRoom = await prisma.auctionRoom.findUnique({
-      where: { id },
-      include: { products: true },
-    });
-    return c.json({ data: auctionRoom });
+app.post("/protected/auction/:id", async (c) => {
+  const payload = c.get("jwtPayload");
+  if (!payload) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+  const body = await c.req.json();
+  const auctionRoom = await prisma.auctionRoom.create({
+    data: {
+      id: body.id,
+      name: body.name,
+      description: body.description,
+    },
   });
+  return c.json({ data: auctionRoom });
+});
+
+app.get("/protected/auction/:id", async (c) => {
+  const { id } = c.req.param();
+  const auctionRoom = await prisma.auctionRoom.findUnique({
+    where: { id },
+    include: { products: true },
+  });
+  return c.json({ data: auctionRoom });
+});
 
 export default app;
