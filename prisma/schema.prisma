@@ -46,4 +46,5 @@ model AuctionRoom {
   products Product[]
   description String
   createdAt DateTime @default(now())
+  sellerId String
 }
