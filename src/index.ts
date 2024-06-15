@@ -182,7 +182,7 @@ app.delete("/protected/product/:id", async (c) => {
   }
 });
 
-app.post("/protected/auction/:id", async (c) => {
+app.post("/protected/auction", async (c) => {
   const payload = c.get("jwtPayload");
   if (!payload) {
     throw new HTTPException(401, { message: "Unauthorized" });
@@ -190,7 +190,6 @@ app.post("/protected/auction/:id", async (c) => {
   const body = await c.req.json();
   const auctionRoom = await prisma.auctionRoom.create({
     data: {
-      id: body.id,
       name: body.name,
       description: body.description,
       products: { connect: { id: body.productId } },
@@ -253,7 +252,5 @@ app.delete("/protected/auction/:id", async (c) => {
     throw new HTTPException(403, { message: "Forbidden" });
   }
 });
-
-
 
 export default app;
