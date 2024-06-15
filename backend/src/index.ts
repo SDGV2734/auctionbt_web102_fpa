@@ -5,6 +5,10 @@ import { HTTPException } from "hono/http-exception";
 import { decode, sign, verify } from "hono/jwt";
 import { jwt } from "hono/jwt";
 import type { JwtVariables } from "hono/jwt";
+import * as dotenv from 'dotenv'; // Use named import
+
+// Load environment variables from .env file
+dotenv.config();
 
 type Variables = JwtVariables;
 
@@ -251,6 +255,18 @@ app.delete("/protected/auction/:id", async (c) => {
   } else {
     throw new HTTPException(403, { message: "Forbidden" });
   }
+});
+
+app.get("/protected/auction", async (c) => {
+  const payload = c.get("jwtPayload");
+  if (!payload) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+  const auctionRooms = await prisma.auctionRoom.findMany({
+    where: { sellerId: payload.sub },
+    include: { products: true },
+  });
+  return c.json({ data: auctionRooms });
 });
 
 export default app;
