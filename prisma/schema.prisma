@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,9 +14,9 @@ model User {
   name           String
   phoneNumber    String
   profileImage   String?
+  auctionRoomId  String?
   Product        Product[]
   AuctionRoom    AuctionRoom? @relation(fields: [auctionRoomId], references: [id])
-  auctionRoomId  String?
 }
 
 model Product {
@@ -33,17 +30,17 @@ model Product {
   endDate         DateTime?
   extendTime      Float?
   image           String
-  seller          User         @relation(fields: [sellerId], references: [id])
   sellerId        String
-  room            AuctionRoom? @relation(fields: [roomId], references: [id])
   roomId          String?
+  room            AuctionRoom? @relation(fields: [roomId], references: [id])
+  seller          User         @relation(fields: [sellerId], references: [id])
 }
 
 model AuctionRoom {
-  id       String    @id @default(uuid())
-  name     String
-  Users    User[]
-  products Product[]
+  id          String    @id @default(uuid())
+  name        String
   description String
-  createdAt DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  products    Product[]
+  Users       User[]
 }
