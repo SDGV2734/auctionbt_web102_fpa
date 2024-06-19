@@ -8,8 +8,8 @@ datasource db {
 }
 
 model User {
-  id             String @id @default(uuid())
-  email          String @unique
+  id             String       @id @default(uuid())
+  email          String       @unique
   hashedPassword String
   name           String
   phoneNumber    String
@@ -20,7 +20,7 @@ model User {
 }
 
 model Product {
-  id              String    @id @default(uuid())
+  id              String       @id @default(uuid())
   name            String
   description     String
   startPrice      Float
@@ -33,13 +33,16 @@ model Product {
   sellerId        String
   room            AuctionRoom? @relation(fields: [roomId], references: [id])
   roomId          String?
+  User            User?        @relation(fields: [userId], references: [id])
+  userId          String?
 }
 
 model AuctionRoom {
-  id       String    @id @default(uuid())
-  name     String
-  Users    User[]
-  products Product[]
+  id          String    @id @default(uuid())
+  name        String
+  Users       User[]
+  products    Product[]
   description String
-  createdAt DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  sellerId    String
 }

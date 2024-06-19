@@ -99,6 +99,7 @@ app.post("/protected/product", async (c) => {
         minSellingPrice: body.minSellingPrice,
         minIncrementBid: body.minIncrementBid,
         image: body.image,
+        sellerId: payload.sellerId,
       },
     });
     console.log(product);
@@ -187,7 +188,7 @@ app.post("/protected/auction", async (c) => {
     data: {
       name: body.name,
       description: body.description,
-      products: { connect: { id: body.productId } },
+      products: { connect: { id: body.product } },
       sellerId: payload.sub, 
     },
   });
