@@ -34,8 +34,6 @@ app.post("/register", async (c) => {
       data: {
         email: body.email,
         hashedPassword: bcryptHash,
-        name: body.name,
-        phoneNumber: body.phoneNumber,
       },
     });
 
@@ -101,7 +99,6 @@ app.post("/protected/product", async (c) => {
         minSellingPrice: body.minSellingPrice,
         minIncrementBid: body.minIncrementBid,
         image: body.image,
-        seller: { connect: { id: payload.sub } },
       },
     });
     console.log(product);
@@ -115,7 +112,6 @@ app.get("/product/:id", async (c) => {
   const { id } = c.req.param();
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { seller: true },
   });
   return c.json({ data: product });
 });
@@ -127,7 +123,6 @@ app.get("/protected/products", async (c) => {
   }
   const products = await prisma.product.findMany({
     where: { sellerId: payload.sub },
-    include: { seller: true },
   });
   return c.json({ data: products });
 });
