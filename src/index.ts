@@ -34,6 +34,7 @@ app.post("/register", async (c) => {
       data: {
         email: body.email,
         hashedPassword: bcryptHash,
+        name : body.name,
       },
     });
 
@@ -93,9 +94,11 @@ app.post("/protected/product", async (c) => {
     const body = await c.req.json();
     const product = await prisma.product.create({
       data: {
+        id: body.id,
         name: body.name,
         description: body.description,
         image: body.image,
+        sellerId: payload.sub,
       },
     });
     console.log(product);
@@ -172,22 +175,49 @@ app.delete("/protected/product/:id", async (c) => {
   }
 });
 
+// app.post("/protected/auction", async (c) => {
+//   const payload = c.get("jwtPayload");
+//   if (!payload) {
+//     throw new HTTPException(401, { message: "Unauthorized" });
+//   }
+//   const body = await c.req.json();
+//   const auctionRoom = await prisma.auctionRoom.create({
+//     data: {
+//       name: body.name,
+//       itemDescription: body.ItemDescription,
+//       products: { connect: { id: body.product } },
+//       sellerId: payload.sub, 
+//     },
+//   });
+//   return c.json({ data: auctionRoom });
+// });
+
 app.post("/protected/auction", async (c) => {
   const payload = c.get("jwtPayload");
+  const body = await c.req.json();
+
   if (!payload) {
     throw new HTTPException(401, { message: "Unauthorized" });
   }
-  const body = await c.req.json();
   const auctionRoom = await prisma.auctionRoom.create({
     data: {
       name: body.name,
-      description: body.description,
-      products: { connect: { id: body.product } },
-      sellerId: payload.sub, 
+      itemName: body.itemName,
+      itemDescription: body.itemDescription,
+      itemStartingPrice: body.itemStartingPrice,
+      itemMinSellingPrice: body.itemMinSellingPrice,
+      itemMinIncrementBid: body.itemMinIncrementBid,
+      startTime: body.startTime,
+      endTime: body.endTime,
+      owner: {
+        connect: { id: payload.sub },
+      },
     },
   });
-  return c.json({ data: auctionRoom });
+
+  return c.json({ message: "Auction created successfully", data: auctionRoom });
 });
+
 
 app.get("/protected/auction/:id", async (c) => {
   const { id } = c.req.param();
@@ -198,49 +228,132 @@ app.get("/protected/auction/:id", async (c) => {
   return c.json({ data: auctionRoom });
 });
 
+// app.put("/protected/auction/:id", async (c) => {
+//   const payload = c.get("jwtPayload");
+//   if (!payload) {
+//     throw new HTTPException(401, { message: "Unauthorized" });
+//   }
+//   const { id } = c.req.param();
+//   const body = await c.req.json();
+
+//   const auctionRoom = await prisma.auctionRoom.findUnique({ where: { id } });
+//   if (!auctionRoom) {
+//     throw new HTTPException(404, { message: "Auction Room not found" });
+//   }
+//   if (payload.sub === auctionRoom.userId) {
+//     const updatedAuctionRoom = await prisma.auctionRoom.update({
+//       where: { id },
+//       data: {
+//         name: body.name,
+//         itemDescription: body.description,
+//       },
+//     });
+//     return c.json({ data: updatedAuctionRoom });
+//   } else {
+//     throw new HTTPException(403, { message: "Forbidden" });
+//   }
+// });
+
+
 app.put("/protected/auction/:id", async (c) => {
   const payload = c.get("jwtPayload");
   if (!payload) {
     throw new HTTPException(401, { message: "Unauthorized" });
   }
+  
   const { id } = c.req.param();
   const body = await c.req.json();
 
-  const auctionRoom = await prisma.auctionRoom.findUnique({ where: { id } });
-  if (!auctionRoom) {
-    throw new HTTPException(404, { message: "Auction Room not found" });
-  }
-  if (payload.sub === auctionRoom.sellerId) {
+  try {
+    // Fetch the auction room
+    const auctionRoom = await prisma.auctionRoom.findUnique({
+      where: { id },
+    });
+
+    if (!auctionRoom) {
+      throw new HTTPException(404, { message: "Auction Room not found" });
+    }
+
+    // Check if the user is the owner of the auction room
+    if (auctionRoom.userId !== payload.sub) {
+      throw new HTTPException(403, { message: "Forbidden: You do not own this auction room" });
+    }
+
+    // Proceed to update the auction room
     const updatedAuctionRoom = await prisma.auctionRoom.update({
       where: { id },
       data: {
         name: body.name,
-        description: body.description,
+        itemName: body.itemName,
+        itemDescription: body.itemDescription,
+        itemStartingPrice: body.itemStartingPrice,
+        itemMinSellingPrice: body.itemMinSellingPrice,
+        itemMinIncrementBid: body.itemMinIncrementBid,
+        startTime: body.startTime,
+        endTime: body.endTime,
       },
     });
+
     return c.json({ data: updatedAuctionRoom });
-  } else {
-    throw new HTTPException(403, { message: "Forbidden" });
+  } catch (error) {
+    console.error("Error updating auction room:", error);
+    throw new HTTPException(500, { message: "Internal server error" });
   }
 });
+
+// app.delete("/protected/auction/:id", async (c) => {
+//   const payload = c.get("jwtPayload");
+//   if (!payload) {
+//     throw new HTTPException(401, { message: "Unauthorized" });
+//   }
+//   const { id } = c.req.param();
+
+//   const auctionRoom = await prisma.auctionRoom.findUnique({ where: { id } });
+//   if (!auctionRoom) {
+//     throw new HTTPException(404, { message: "Auction Room not found" });
+//   }
+//   if (payload.sub === auctionRoom.userId) {
+//     const deletedAuctionRoom = await prisma.auctionRoom.delete({ where: { id } });
+//     return c.json({ data: deletedAuctionRoom });
+//   } else {
+//     throw new HTTPException(403, { message: "Forbidden" });
+//   }
+// });
 
 app.delete("/protected/auction/:id", async (c) => {
   const payload = c.get("jwtPayload");
   if (!payload) {
     throw new HTTPException(401, { message: "Unauthorized" });
   }
+  
   const { id } = c.req.param();
 
-  const auctionRoom = await prisma.auctionRoom.findUnique({ where: { id } });
-  if (!auctionRoom) {
-    throw new HTTPException(404, { message: "Auction Room not found" });
-  }
-  if (payload.sub === auctionRoom.sellerId) {
-    const deletedAuctionRoom = await prisma.auctionRoom.delete({ where: { id } });
+  try {
+    // Fetch the auction room
+    const auctionRoom = await prisma.auctionRoom.findUnique({
+      where: { id },
+    });
+
+    if (!auctionRoom) {
+      throw new HTTPException(404, { message: "Auction Room not found" });
+    }
+
+    // Checking if the user is the owner of the auction room
+    if (auctionRoom.userId !== payload.sub) {
+      throw new HTTPException(403, { message: "Forbidden: You do not own this auction room" });
+    }
+
+    // Proceed to delete the auction room
+    const deletedAuctionRoom = await prisma.auctionRoom.delete({
+      where: { id },
+    });
+
     return c.json({ data: deletedAuctionRoom });
-  } else {
-    throw new HTTPException(403, { message: "Forbidden" });
+  } catch (error) {
+    console.error("Error deleting auction room:", error);
+    throw new HTTPException(500, { message: "Internal server error" });
   }
 });
+
 
 export default app;

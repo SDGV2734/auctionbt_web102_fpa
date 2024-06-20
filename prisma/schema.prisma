@@ -11,8 +11,8 @@ datasource db {
 }
 
 model User {
-  id             String       @id @default(uuid())
-  email          String       @unique
+  id             String @id @default(uuid())
+  email          String @unique
   hashedPassword String
 
   // Relations
@@ -25,11 +25,13 @@ model User {
 
   // User can win multiple auctions
   wins AuctionRoom[] @relation("Winner")
+  name String
 }
 
 model AuctionRoom {
-  id   String @id @default(uuid())
-  name String
+  id       String    @id @default(uuid())
+  name     String
+  products Product[]
 
   // Item Details
   itemName            String
@@ -72,7 +74,6 @@ model Product {
   extendTime      Float?
   image           String
   sellerId        String
-  room            AuctionRoom? @relation(fields: [roomId], references: [id])
-  roomId          String?
+  AuctionRoom     AuctionRoom? @relation(fields: [auctionRoomId], references: [id])
+  auctionRoomId   String?
 }
-
