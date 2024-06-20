@@ -21,7 +21,7 @@ app.use(
   })
 );
 
-app.post("/register", async (c) => {
+app.post("/signup", async (c) => {
   try {
     const body = await c.req.json();
 
@@ -34,6 +34,7 @@ app.post("/register", async (c) => {
       data: {
         email: body.email,
         hashedPassword: bcryptHash,
+        name: body.name,
       },
     });
 
@@ -51,7 +52,7 @@ app.post("/register", async (c) => {
   }
 });
 
-app.post("/login", async (c) => {
+app.post("/signin", async (c) => {
   try {
     const body = await c.req.json();
     const user = await prisma.user.findUnique({
@@ -173,7 +174,7 @@ app.delete("/protected/product/:id", async (c) => {
   }
 });
 
-app.post("/protected/auction", async (c) => {
+app.post("/protected/auction/create", async (c) => {
   const payload = c.get("jwtPayload");
   if (!payload) {
     throw new HTTPException(401, { message: "Unauthorized" });
@@ -182,21 +183,26 @@ app.post("/protected/auction", async (c) => {
   const auctionRoom = await prisma.auctionRoom.create({
     data: {
       name: body.name,
-      description: body.description,
-      products: { connect: { id: body.productId } },
-      sellerId: payload.sub, 
-    },
+      itemName: body.itemName,
+      itemDescription: body.description,
+      itemStartingPrice: body.startingPrice,
+      itemMinSellingPrice: body.minSellingPrice,
+      itemMinIncrementBid: body.minIncrementBid,
+      startTime: body.startTime,
+      endTime: body.endTime,
+      owner: {
+        connect: { id: payload.sub },
+      },
+      }
   });
-  return c.json({ data: auctionRoom });
+  return c.json({ message: "Auction Room created successfully", data: auctionRoom });
 });
 
-app.get("/protected/auction/:id", async (c) => {
-  const { id } = c.req.param();
-  const auctionRoom = await prisma.auctionRoom.findUnique({
-    where: { id },
-    include: { products: true },
-  });
+
+app.get("/auctions", async (c) => {
+  const auctionRoom = await prisma.auctionRoom.findMany();
   return c.json({ data: auctionRoom });
+   
 });
 
 app.put("/protected/auction/:id", async (c) => {
