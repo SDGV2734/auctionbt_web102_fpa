@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,21 +14,59 @@ model User {
   id             String       @id @default(uuid())
   email          String       @unique
   hashedPassword String
-  name           String
-  phoneNumber    String
-  profileImage   String?
-  Product        Product[]
-  AuctionRoom    AuctionRoom? @relation(fields: [auctionRoomId], references: [id])
-  auctionRoomId  String?
+
+  // Relations
+
+  // User can join multiple auction rooms
+  joinedAuctionRooms AuctionRoom[]
+
+  // User can own multiple auction rooms
+  myAuctionRooms AuctionRoom[] @relation("Owner")
+
+  // User can win multiple auctions
+  wins AuctionRoom[] @relation("Winner")
+}
+
+model AuctionRoom {
+  id   String @id @default(uuid())
+  name String
+
+  // Item Details
+  itemName            String
+  itemDescription     String
+  itemStartingPrice   Float
+  itemMinSellingPrice Float
+  itemMinIncrementBid Float
+  itemWinningBid      Float?
+  itemCurrentBid      Float?
+  itemCurrentBidUser  String?
+  startTime           DateTime
+  endTime             DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+
+  // Auction room can have multiple users
+  participants User[]
+
+  // Auction room can have only one owner
+  owner  User   @relation("Owner", fields: [userId], references: [id])
+  userId String
+
+  // Auction room can have only one winner
+  winner             User?  @relation("Winner", fields: [itemWinningBidUser], references: [id])
+  itemWinningBidUser String
 }
 
 model Product {
   id              String       @id @default(uuid())
   name            String
   description     String
-  startPrice      Float
-  minSellingPrice Float
-  minIncrementBid Float
+  startPrice      Float?
+  minSellingPrice Float?
+  minIncrementBid Float?
   startDate       DateTime?
   endDate         DateTime?
   extendTime      Float?
@@ -33,16 +74,5 @@ model Product {
   sellerId        String
   room            AuctionRoom? @relation(fields: [roomId], references: [id])
   roomId          String?
-  User            User?        @relation(fields: [userId], references: [id])
-  userId          String?
 }
 
-model AuctionRoom {
-  id          String    @id @default(uuid())
-  name        String
-  Users       User[]
-  products    Product[]
-  description String
-  createdAt   DateTime  @default(now())
-  sellerId    String
-}

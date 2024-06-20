@@ -95,11 +95,7 @@ app.post("/protected/product", async (c) => {
       data: {
         name: body.name,
         description: body.description,
-        startPrice: body.startPrice,
-        minSellingPrice: body.minSellingPrice,
-        minIncrementBid: body.minIncrementBid,
         image: body.image,
-        sellerId: payload.sellerId,
       },
     });
     console.log(product);
@@ -148,8 +144,6 @@ app.put("/protected/product/:id", async (c) => {
       data: {
         name: body.name,
         description: body.description,
-        startPrice: body.startPrice,
-        minSellingPrice: body.minSellingPrice,
         image: body.image,
       },
     });
