@@ -15,22 +15,18 @@ model User {
   email          String @unique
   hashedPassword String
   name           String
-
-  // Relations
-
-  // User can join multiple auction rooms
   joinedAuctionRooms AuctionRoom[]
-
-  // User can own multiple auction rooms
   myAuctionRooms AuctionRoom[] @relation("Owner")
-
-  // User can win multiple auctions
   wins AuctionRoom[] @relation("Winner")
+  
+
+  AuctionRoom AuctionRoom[] @relation("Participants")
 }
 
 model AuctionRoom {
-  id   String @id @default(uuid())
-  name String
+  id       String    @id @default(uuid())
+  name     String
+  products Product[]
 
   // Item Details
   itemName            String
@@ -48,21 +44,23 @@ model AuctionRoom {
   updatedAt DateTime @updatedAt
 
   // Relations
-
+  
   // Auction room can have multiple users
-  participants User[]
-
+  participants User[] @relation("Participants")
+  
   // Auction room can have only one owner
   owner  User   @relation("Owner", fields: [userId], references: [id])
   userId String
 
   // Auction room can have only one winner
   winner             User?  @relation("Winner", fields: [itemWinningBidUser], references: [id])
-  itemWinningBidUser String
+  itemWinningBidUser String?
+
+  User User[]
 }
 
 model Product {
-  id              String    @id @default(uuid())
+  id              String       @id @default(uuid())
   name            String
   description     String
   startPrice      Float?
@@ -73,4 +71,6 @@ model Product {
   extendTime      Float?
   image           String
   sellerId        String
+  AuctionRoom     AuctionRoom? @relation(fields: [auctionRoomId], references: [id])
+  auctionRoomId   String?
 }
