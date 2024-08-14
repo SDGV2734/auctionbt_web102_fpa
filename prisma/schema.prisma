@@ -63,12 +63,12 @@ model Product {
   id              String       @id @default(uuid())
   name            String
   description     String
-  startPrice      Float?
-  minSellingPrice Float?
-  minIncrementBid Float?
-  startDate       DateTime?
-  endDate         DateTime?
-  extendTime      Float?
+  // startPrice      Float?
+  // minSellingPrice Float?
+  // minIncrementBid Float?
+  // startDate       DateTime?
+  // endDate         DateTime?
+  // extendTime      Float?
   image           String
   sellerId        String
   AuctionRoom     AuctionRoom? @relation(fields: [auctionRoomId], references: [id])

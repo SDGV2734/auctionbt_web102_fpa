@@ -224,7 +224,7 @@ app.delete("/protected/product/:id", async (c) => {
     return c.json({ data: deletedProduct });
   } else if (payload.sub != product.sellerId) {
     throw new HTTPException(403, { message: "Forbidden" });
-  }
+  } 
 });
 
 // app.post("/protected/auction", async (c) => {
@@ -248,7 +248,7 @@ app.post("/protected/auction/create", async (c) => {
   try {
     const payload = c.get("jwtPayload");
     const body = await c.req.json();
-
+    
     if (!payload) {
       throw new HTTPException(401, { message: "Unauthorized" });
     }
