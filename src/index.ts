@@ -72,7 +72,7 @@ app.post("/login", async (c) => {
     if (match) {
       const payload = {
         sub: user.id,
-        exp: Math.floor(Date.now() / 1000) + 60 * 720, // Token expires in 720 minutes
+        exp: Math.floor(Date.now() / 1000) + 60 * 720, 
       };
       const secret = "mySecretKey";
       const token = await sign(payload, secret);
@@ -260,10 +260,10 @@ app.post("/protected/auction/create", async (c) => {
         itemStartingPrice: body.itemStartingPrice,
         itemMinSellingPrice: body.itemMinSellingPrice,
         itemMinIncrementBid: body.itemMinIncrementBid,
-        startTime: body.startTime,
-        endTime: body.endTime,
+        startTime: new Date(body.startTime).toISOString(),
+        endTime: new Date(body.endTime).toISOString(),
         owner: { connect: { id: payload.sub}},
-        products: { connect: { id: body.productId } },
+        // products: { connect: { id: body.productId } },
       },
     });
     console.log(auctionRoom);
